@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>우리아이 AI친구</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Korean typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic styles and animations */
+        body, html { overflow: hidden; height: 100%; }
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .recording { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        #conversation-log::-webkit-scrollbar { width: 5px; }
+        #conversation-log::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .save-voice-btn.saved { background-color: #10B981; color: white; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Main application container -->
+    <div id="app-container" class="max-w-md mx-auto bg-white h-full shadow-lg relative">
+
+        <!-- Screen 0: Permission Request Screen -->
+        <div id="permission-screen" class="absolute inset-0 flex flex-col h-full justify-center items-center p-8 text-center bg-white z-40">
+             <header class="bg-blue-500 text-white p-4 text-center absolute top-0 w-full max-w-md">
+                <h1 class="text-2xl font-bold">우리아이 AI친구</h1>
+            </header>
+            <div class="flex-grow flex flex-col justify-center items-center">
+                <svg class="w-24 h-24 text-blue-500 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">마이크 사용 권한 안내</h2>
+                <p class="text-gray-600 mb-8">AI 친구와 음성으로 대화하려면 마이크 사용 권한을 허용해야 합니다.</p>
+                <button id="request-permission-btn" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-600">권한 확인하기</button>
+                 <p id="permission-status" class="mt-4 text-sm text-red-500 h-5"></p>
+            </div>
+        </div>
+
+        <!-- Screen 1: User Selection Screen -->
+        <div id="user-selection-screen" class="absolute inset-0 flex flex-col h-full bg-white z-30">
+            <header class="bg-blue-500 text-white p-4 flex justify-between items-center flex-shrink-0">
+                <div class="w-10"></div>
+                <h1 class="text-2xl font-bold">우리아이 AI친구</h1>
+                <button id="open-voice-settings-btn" class="text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button>
+            </header>
+            <main class="p-5 overflow-y-auto flex-grow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">누구랑 대화할까요?</h2>
+                <div id="user-list" class="space-y-3"></div>
+                <button id="show-add-user-btn" class="mt-6 w-full bg-green-500 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-600">+ 새 사용자 추가</button>
+            </main>
+        </div>
+
+        <!-- Screen 2: Add User Screen -->
+        <div id="add-user-screen" class="absolute inset-0 flex flex-col h-full bg-white z-20">
+             <header class="bg-green-500 text-white p-4 flex items-center flex-shrink-0">
+                <button id="cancel-add-user-btn" class="text-2xl font-bold mr-4">←</button>
+                <h1 class="text-xl font-bold">새 사용자 등록</h1>
+            </header>
+            <form id="add-user-form" class="p-6 space-y-5 overflow-y-auto flex-grow"></form>
+        </div>
+
+        <!-- Screen 3: Chat Screen -->
+        <div id="chat-screen" class="absolute inset-0 flex flex-col h-full bg-white z-10">
+             <header class="bg-blue-500 text-white p-4 flex items-center justify-between flex-shrink-0">
+                <button id="back-to-selection-btn" class="text-3xl font-bold leading-none">‹</button>
+                <h1 id="chat-header" class="text-xl font-bold"></h1>
+                <button id="tts-toggle-btn" class="text-white w-8 h-8 flex items-center justify-center"></button>
+            </header>
+            <main id="conversation-log" class="flex-grow p-4 overflow-y-auto space-y-4"></main>
+            <footer class="p-3 bg-gray-100 flex items-center border-t gap-2 flex-shrink-0">
+                <input type="text" id="text-input" placeholder="메시지를 입력하세요..." class="flex-grow w-full border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <button id="send-btn" class="bg-blue-500 text-white w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center shadow-md hover:bg-blue-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg></button>
+                <button id="mic-btn" class="bg-red-500 text-white w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center shadow-md hover:bg-red-600"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zM3 9a1 1 0 011-1h1a1 1 0 011 1v1a4 4 0 004 4h0a4 4 0 004-4V9a1 1 0 011-1h1a1 1 0 011 1v1a6 6 0 11-12 0V9z"></path></svg></button>
+            </footer>
+            <div id="status" class="pb-2 text-center text-gray-600 h-10 font-semibold flex-shrink-0"></div>
+        </div>
+        
+        <!-- Modal: Voice Settings -->
+        <div id="voice-settings-modal" class="hidden absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+                <h3 class="text-xl font-bold mb-4">목소리 설정</h3>
+                <div class="space-y-4">
+                    <div><label for="voice-select" class="block text-sm font-medium">목소리 선택</label><select id="voice-select" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select></div>
+                    <div><label for="rate-slider" class="block text-sm font-medium">속도: <span id="rate-value">1</span></label><input id="rate-slider" type="range" min="0.5" max="1.5" step="0.1" class="w-full"></div>
+                    <div><label for="pitch-slider" class="block text-sm font-medium">높낮이: <span id="pitch-value">1</span></label><input id="pitch-slider" type="range" min="0.5" max="1.5" step="0.1" class="w-full"></div>
+                </div>
+                <div class="mt-6 flex justify-between gap-3">
+                    <button id="test-voice-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">들어보기</button>
+                    <button id="save-settings-btn" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Configuration ---
+            const API_URL = 'https://n8n.familykim.uk/webhook/5578d37f-b089-43d1-a949-68546d2fb16f';
+            const MIN_AGE = 3;
+            const MAX_AGE = 13;
+
+            // --- DOM Elements ---
+            const screens = {
+                permission: document.getElementById('permission-screen'),
+                userSelection: document.getElementById('user-selection-screen'),
+                addUser: document.getElementById('add-user-screen'),
+                chat: document.getElementById('chat-screen'),
+            };
+            const voiceSettingsModal = document.getElementById('voice-settings-modal');
+            const requestPermissionBtn = document.getElementById('request-permission-btn');
+            const permissionStatusEl = document.getElementById('permission-status');
+            const userListEl = document.getElementById('user-list');
+            const addUserForm = document.getElementById('add-user-form');
+            const chatHeader = document.getElementById('chat-header');
+            const conversationLog = document.getElementById('conversation-log');
+            const statusEl = document.getElementById('status');
+            const micBtn = document.getElementById('mic-btn');
+            const textInput = document.getElementById('text-input');
+            const sendBtn = document.getElementById('send-btn');
+            const ttsToggleBtn = document.getElementById('tts-toggle-btn');
+            
+            // --- Voice Settings UI ---
+            const openVoiceSettingsBtn = document.getElementById('open-voice-settings-btn');
+            const voiceSelect = document.getElementById('voice-select');
+            const rateSlider = document.getElementById('rate-slider');
+            const rateValue = document.getElementById('rate-value');
+            const pitchSlider = document.getElementById('pitch-slider');
+            const pitchValue = document.getElementById('pitch-value');
+            const testVoiceBtn = document.getElementById('test-voice-btn');
+            const saveSettingsBtn = document.getElementById('save-settings-btn');
+            
+            // --- Web APIs ---
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+            const synth = window.speechSynthesis;
+            let voices = [];
+            
+            // --- Application State ---
+            let users = [];
+            let currentUser = null;
+            let isRecording = false;
+            let isTtsEnabled = true;
+            let voiceSettings = { name: null, rate: 1, pitch: 1 };
+            
+            // --- Core Functions ---
+            function showScreen(screenName) {
+                // Use 'hidden' class to control screen visibility
+                for (const key in screens) {
+                    screens[key].classList.add('hidden');
+                }
+                const targetScreen = screens[screenName];
+                if (targetScreen) {
+                    targetScreen.classList.remove('hidden');
+                }
+            }
+            
+            async function requestMicrophonePermission() {
+                permissionStatusEl.textContent = "권한을 확인하는 중...";
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    permissionStatusEl.textContent = "권한이 허용되었습니다!";
+                    permissionStatusEl.className = "mt-4 text-sm text-green-500 h-5";
+                    setTimeout(() => showScreen('userSelection'), 1500);
+                } catch (err) {
+                    permissionStatusEl.className = "mt-4 text-sm text-red-500 h-5";
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        permissionStatusEl.textContent = "권한이 거부되었습니다. 브라우저 설정을 확인해주세요.";
+                    } else {
+                        permissionStatusEl.textContent = "마이크를 찾을 수 없습니다.";
+                    }
+                }
+            }
+            
+            function calculateAge(birthYear, birthMonth) {
+                const today = new Date();
+                let age = today.getFullYear() - birthYear;
+                if ((today.getMonth() + 1) < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < 1)) { age--; }
+                return age;
+            }
+
+            // --- User Management ---
+            function loadUsers() { users = JSON.parse(localStorage.getItem('ai-friend-users')) || []; }
+            function saveUsers() { localStorage.setItem('ai-friend-users', JSON.stringify(users)); }
+
+            function renderUsers() {
+                userListEl.innerHTML = users.length ? '' : `<p class="text-center text-gray-500">등록된 사용자가 없습니다.</p>`;
+                users.forEach(user => {
+                    const age = calculateAge(user.birthYear, user.birthMonth);
+                    const userCard = document.createElement('div');
+                    userCard.className = 'bg-white p-4 rounded-lg shadow border flex justify-between items-center';
+                    userCard.innerHTML = `<div><p class="text-lg font-bold">${user.lastName}${user.firstName}</p><p class="text-sm text-gray-500">만 ${age}세 (${user.birthYear}년 ${user.birthMonth}월생)</p></div><button data-id="${user.id}" class="select-user-btn bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">선택</button>`;
+                    userListEl.appendChild(userCard);
+                });
+            }
+            
+            function createAddUserForm() {
+                addUserForm.innerHTML = `<div><label for="last-name" class="block text-md font-medium">성</label><input type="text" id="last-name" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"></div><div><label for="first-name" class="block text-md font-medium">이름</label><input type="text" id="first-name" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"></div><div><label for="birth-year" class="block text-md font-medium">출생년도</label><select id="birth-year" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 bg-white"></select></div><div><label for="birth-month" class="block text-md font-medium">출생월</label><select id="birth-month" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 bg-white"></select></div><p class="text-sm text-gray-500 pt-2">※ 만 3세부터 13세까지 등록 가능합니다.</p><button type="submit" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-600">저장하기</button>`;
+                const birthYearSelect = addUserForm.querySelector('#birth-year');
+                const birthMonthSelect = addUserForm.querySelector('#birth-month');
+                const currentYear = new Date().getFullYear();
+                birthYearSelect.innerHTML = '<option value="">선택</option>';
+                for (let year = currentYear - MIN_AGE; year >= currentYear - MAX_AGE; year--) {
+                    birthYearSelect.innerHTML += `<option value="${year}">${year}년</option>`;
+                }
+                birthMonthSelect.innerHTML = '<option value="">선택</option>';
+                for (let month = 1; month <= 12; month++) {
+                    birthMonthSelect.innerHTML += `<option value="${month}">${month}월</option>`;
+                }
+            }
+
+            // --- Chat Management ---
+            function createIntroMessage() {
+                 conversationLog.innerHTML = `<div id="intro-message" class="text-center text-gray-500 mt-8 p-4"><p class="text-lg">안녕하세요!</p><p>메시지를 입력하거나 마이크를 눌러주세요!</p></div>`;
+            }
+            
+            function speak(text, forTest = false) {
+                if (!isTtsEnabled && !forTest) return;
+                if (synth.speaking) synth.cancel();
+                if (!text || text.trim() === '') return;
+                
+                const textForSpeech = forTest ? text : text.replace(/[^\u3131-\u3163\uac00-\ud7a3a-zA-Z0-9.,?! ]/g, '');
+                const utterance = new SpeechSynthesisUtterance(textForSpeech);
+                
+                const selectedVoice = voices.find(v => v.name === voiceSettings.name);
+                utterance.voice = selectedVoice || voices.find(v => v.lang === 'ko-KR');
+                utterance.rate = voiceSettings.rate;
+                utterance.pitch = voiceSettings.pitch;
+                utterance.lang = 'ko-KR';
+                
+                if(!forTest) {
+                    utterance.onstart = () => statusEl.textContent = 'AI가 말하는 중... 🔊';
+                    utterance.onend = () => statusEl.textContent = '메시지를 입력하거나 마이크를 눌러주세요.';
+                }
+                synth.speak(utterance);
+            }
+
+            async function sendDataToServer(text) {
+                statusEl.textContent = 'AI가 생각하는 중... 🤔';
+                const currentVoiceSettings = {...voiceSettings};
+                addMessageToLog(text, 'user', null);
+                try {
+                    const age = calculateAge(currentUser.birthYear, currentUser.birthMonth);
+                    const payload = { child_id: currentUser.id, child_name: currentUser.firstName, child_old: age, Message: text };
+                    const response = await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    
+                    const responseText = result?.Message;
+
+                    if (responseText) {
+                        addMessageToLog(responseText, 'ai', currentVoiceSettings);
+                        speak(responseText);
+                    } else {
+                        const debugMessage = `[디버그] 응답 형식 오류: ${JSON.stringify(result)}`;
+                        addMessageToLog(debugMessage, 'ai', null);
+                        speak("서버 응답을 확인해주세요.", true);
+                    }
+                } catch (error) {
+                    const errorMessage = '서버와 통신하는 데 문제가 생겼어요.';
+                    addMessageToLog(errorMessage, 'ai', null);
+                    speak(errorMessage, true);
+                }
+            }
+            
+            function addMessageToLog(text, sender, voiceData) {
+                const intro = conversationLog.querySelector('#intro-message');
+                if(intro) intro.remove();
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex items-end gap-2 mb-2 ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = `p-3 rounded-lg max-w-[70%] break-words ${sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`;
+                bubble.textContent = text;
+                
+                if(sender === 'ai') wrapper.appendChild(bubble);
+
+                if(sender === 'ai' && voiceData) {
+                    const pinBtn = document.createElement('button');
+                    pinBtn.innerHTML = '📌';
+                    pinBtn.title = '이 목소리로 설정하기';
+                    pinBtn.className = 'save-voice-btn text-xl p-1 rounded-full hover:bg-gray-300 transition-colors flex-shrink-0';
+                    pinBtn.dataset.voiceSettings = JSON.stringify(voiceData);
+                    wrapper.appendChild(pinBtn);
+                }
+
+                if(sender === 'user') wrapper.appendChild(bubble);
+                
+                conversationLog.appendChild(wrapper);
+                conversationLog.scrollTop = conversationLog.scrollHeight;
+            }
+
+            // --- Settings Management ---
+            function loadVoiceSettings() {
+                const saved = localStorage.getItem('ai-friend-voice-settings');
+                if (saved) voiceSettings = JSON.parse(saved);
+                const ttsSaved = localStorage.getItem('ai-friend-tts-enabled');
+                isTtsEnabled = ttsSaved !== null ? JSON.parse(ttsSaved) : true;
+            }
+            function saveVoiceSettings() {
+                localStorage.setItem('ai-friend-voice-settings', JSON.stringify(voiceSettings));
+            }
+            function saveTtsSetting() {
+                localStorage.setItem('ai-friend-tts-enabled', JSON.stringify(isTtsEnabled));
+            }
+            
+            function updateTtsButtonIcon() {
+                if (isTtsEnabled) {
+                    ttsToggleBtn.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707a1 1 0 011.414 0v14.142a1 1 0 01-1.414 0L5.586 15z"></path></svg>`;
+                    ttsToggleBtn.title = "음성 출력 끄기";
+                } else {
+                    ttsToggleBtn.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707a1 1 0 011.414 0v14.142a1 1 0 01-1.414 0L5.586 15z" clip-rule="evenodd"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l-5-5m0 5l5-5"></path></svg>`;
+                    ttsToggleBtn.title = "음성 출력 켜기";
+                }
+            }
+            
+            function updateVoiceSettingsUI() {
+                if(voices.length === 0) populateVoiceList();
+                voiceSelect.value = voiceSettings.name;
+                rateSlider.value = voiceSettings.rate;
+                rateValue.textContent = voiceSettings.rate;
+                pitchSlider.value = voiceSettings.pitch;
+                pitchValue.textContent = voiceSettings.pitch;
+            }
+            
+            function populateVoiceList() {
+                voices = synth.getVoices().filter(v => v.lang.startsWith('ko'));
+                if (voices.length === 0 && synth.onvoiceschanged === null) {
+                    synth.onvoiceschanged = populateVoiceList;
+                    return;
+                }
+                voiceSelect.innerHTML = '';
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.textContent = `${voice.name}`;
+                    option.value = voice.name;
+                    voiceSelect.appendChild(option);
+                });
+                if(!voiceSettings.name && voices.length > 0) {
+                    voiceSettings.name = voices[0].name;
+                }
+                updateVoiceSettingsUI();
+            }
+
+            // --- Event Listeners ---
+            openVoiceSettingsBtn.addEventListener('click', () => {
+                updateVoiceSettingsUI();
+                voiceSettingsModal.classList.remove('hidden');
+            });
+            saveSettingsBtn.addEventListener('click', () => {
+                voiceSettings.name = voiceSelect.value;
+                voiceSettings.rate = rateSlider.value;
+                voiceSettings.pitch = pitchSlider.value;
+                saveVoiceSettings();
+                voiceSettingsModal.classList.add('hidden');
+            });
+            testVoiceBtn.addEventListener('click', () => {
+                const utterance = new SpeechSynthesisUtterance("안녕하세요! 목소리 테스트 중입니다.");
+                const selectedVoice = voices.find(v => v.name === voiceSelect.value);
+                utterance.voice = selectedVoice;
+                utterance.rate = rateSlider.value;
+                utterance.pitch = pitchSlider.value;
+                synth.speak(utterance);
+            });
+            rateSlider.addEventListener('input', (e) => rateValue.textContent = e.target.value);
+            pitchSlider.addEventListener('input', (e) => pitchValue.textContent = e.target.value);
+            
+            conversationLog.addEventListener('click', e => {
+                const pinBtn = e.target.closest('.save-voice-btn');
+                if (pinBtn && pinBtn.dataset.voiceSettings) {
+                    voiceSettings = JSON.parse(pinBtn.dataset.voiceSettings);
+                    saveVoiceSettings();
+                    document.querySelectorAll('.save-voice-btn').forEach(btn => {
+                        btn.innerHTML = '📌';
+                        btn.classList.remove('saved');
+                    });
+                    pinBtn.innerHTML = '✅';
+                    pinBtn.classList.add('saved');
+                }
+            });
+
+            requestPermissionBtn.addEventListener('click', requestMicrophonePermission);
+            document.getElementById('show-add-user-btn').addEventListener('click', () => showScreen('addUser'));
+            document.getElementById('cancel-add-user-btn').addEventListener('click', () => showScreen('userSelection'));
+            document.getElementById('back-to-selection-btn').addEventListener('click', () => {
+                currentUser = null;
+                createIntroMessage();
+                showScreen('userSelection');
+            });
+            
+            addUserForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const lastName = addUserForm.querySelector('#last-name').value.trim();
+                const firstName = addUserForm.querySelector('#first-name').value.trim();
+                const year = parseInt(addUserForm.querySelector('#birth-year').value);
+                const month = parseInt(addUserForm.querySelector('#birth-month').value);
+                if (!lastName || !firstName || !year || !month) return alert('모든 정보를 입력해주세요.');
+                const age = calculateAge(year, month);
+                if (age < MIN_AGE || age > MAX_AGE) return alert(`만 ${MIN_AGE}세부터 ${MAX_AGE}세까지 등록 가능합니다.`);
+                users.push({id: Date.now(), lastName, firstName, birthYear: year, birthMonth: month});
+                saveUsers();
+                renderUsers();
+                showScreen('userSelection');
+            });
+            
+            userListEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('select-user-btn')) {
+                    currentUser = users.find(u => u.id === parseInt(e.target.dataset.id));
+                    if (currentUser) {
+                        chatHeader.textContent = `${currentUser.lastName}${currentUser.firstName}님과 대화하기`;
+                        createIntroMessage();
+                        showScreen('chat');
+                    }
+                }
+            });
+            sendBtn.addEventListener('click', () => {
+                const messageText = textInput.value.trim();
+                if (messageText) sendDataToServer(messageText);
+                textInput.value = '';
+            });
+            textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); } });
+            micBtn.addEventListener('click', () => {
+                if (!recognition) return;
+                if (synth.speaking) synth.cancel();
+                if (isRecording) recognition.stop();
+                else try { recognition.start(); } catch(e) { console.error(e); }
+            });
+            
+            ttsToggleBtn.addEventListener('click', () => {
+                isTtsEnabled = !isTtsEnabled;
+                saveTtsSetting();
+                updateTtsButtonIcon();
+                if (!isTtsEnabled && synth.speaking) {
+                    synth.cancel();
+                }
+            });
+            
+            if (recognition) {
+                recognition.lang = 'ko-KR';
+                recognition.onstart = () => { isRecording = true; micBtn.classList.add('recording'); statusEl.textContent = '듣는 중... 🎤'; };
+                recognition.onend = () => { isRecording = false; micBtn.classList.remove('recording'); if (statusEl.textContent === '듣는 중... 🎤') statusEl.textContent = '메시지를 입력하거나 마이크를 눌러주세요.';};
+                recognition.onresult = (e) => sendDataToServer(e.results[0][0].transcript);
+                recognition.onerror = (e) => {
+                    let msg = '음성 인식 오류';
+                    if (e.error === 'no-speech') msg = '음성이 들리지 않아요.';
+                    else if (e.error === 'not-allowed') msg = '마이크 사용이 차단되었어요.';
+                    statusEl.textContent = msg;
+                };
+            }
+            
+            // --- App Initialization ---
+            async function initializeApp() {
+                loadVoiceSettings();
+                updateTtsButtonIcon();
+                populateVoiceList(); 
+                loadUsers();
+                renderUsers();
+                createAddUserForm();
+                
+                if (navigator.permissions) {
+                    try {
+                        const permission = await navigator.permissions.query({ name: 'microphone' });
+                        if (permission.state === 'granted') {
+                            showScreen('userSelection');
+                        } else {
+                            showScreen('permission');
+                        }
+                        permission.onchange = () => {
+                            if(permission.state === 'granted') showScreen('userSelection');
+                            else showScreen('permission');
+                        }
+                    } catch(e) {
+                         showScreen('userSelection');
+                    }
+                } else {
+                     showScreen('permission');
+                }
+            }
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
