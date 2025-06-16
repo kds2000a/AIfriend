@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* Basic styles and animations */
+        /* 기본 스타일 및 애니메이션 */
         body, html { overflow: hidden; height: 100%; }
         body { font-family: 'Noto Sans KR', sans-serif; }
         .recording { animation: pulse 1.5s infinite; }
@@ -26,10 +26,10 @@
     </style>
 </head>
 <body class="bg-gray-100">
-    <!-- Main application container -->
+    <!-- 앱 전체 컨테이너 -->
     <div id="app-container" class="max-w-md mx-auto bg-white h-full shadow-lg relative">
 
-        <!-- Screen 0: Permission Request Screen -->
+        <!-- 화면 0: 권한 확인 화면 -->
         <div id="permission-screen" class="absolute inset-0 flex flex-col h-full justify-center items-center p-8 text-center bg-white z-40">
              <header class="bg-blue-500 text-white p-4 text-center absolute top-0 w-full max-w-md">
                 <h1 class="text-2xl font-bold">우리아이 AI친구</h1>
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <!-- Screen 1: User Selection Screen -->
+        <!-- 화면 1: 사용자 선택 화면 -->
         <div id="user-selection-screen" class="absolute inset-0 flex flex-col h-full bg-white z-30">
             <header class="bg-blue-500 text-white p-4 flex justify-between items-center flex-shrink-0">
                 <div class="w-10"></div>
@@ -57,7 +57,7 @@
             </main>
         </div>
 
-        <!-- Screen 2: Add User Screen -->
+        <!-- 화면 2: 사용자 추가 화면 -->
         <div id="add-user-screen" class="absolute inset-0 flex flex-col h-full bg-white z-20">
              <header class="bg-green-500 text-white p-4 flex items-center flex-shrink-0">
                 <button id="cancel-add-user-btn" class="text-2xl font-bold mr-4">←</button>
@@ -66,7 +66,7 @@
             <form id="add-user-form" class="p-6 space-y-5 overflow-y-auto flex-grow"></form>
         </div>
 
-        <!-- Screen 3: Chat Screen -->
+        <!-- 화면 3: 대화 화면 -->
         <div id="chat-screen" class="absolute inset-0 flex flex-col h-full bg-white z-10">
              <header class="bg-blue-500 text-white p-4 flex items-center justify-between flex-shrink-0">
                 <button id="back-to-selection-btn" class="text-3xl font-bold leading-none">‹</button>
@@ -82,7 +82,7 @@
             <div id="status" class="pb-2 text-center text-gray-600 h-10 font-semibold flex-shrink-0"></div>
         </div>
         
-        <!-- Modal: Voice Settings -->
+        <!-- 모달: 목소리 설정 -->
         <div id="voice-settings-modal" class="hidden absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
             <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
                 <h3 class="text-xl font-bold mb-4">목소리 설정</h3>
@@ -101,12 +101,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Configuration ---
+            // --- 설정 ---
             const API_URL = 'https://n8n.familykim.uk/webhook/5578d37f-b089-43d1-a949-68546d2fb16f';
             const MIN_AGE = 3;
             const MAX_AGE = 13;
 
-            // --- DOM Elements ---
+            // --- DOM 요소 ---
             const screens = {
                 permission: document.getElementById('permission-screen'),
                 userSelection: document.getElementById('user-selection-screen'),
@@ -126,7 +126,7 @@
             const sendBtn = document.getElementById('send-btn');
             const ttsToggleBtn = document.getElementById('tts-toggle-btn');
             
-            // --- Voice Settings UI ---
+            // --- 목소리 설정 UI ---
             const openVoiceSettingsBtn = document.getElementById('open-voice-settings-btn');
             const voiceSelect = document.getElementById('voice-select');
             const rateSlider = document.getElementById('rate-slider');
@@ -136,22 +136,21 @@
             const testVoiceBtn = document.getElementById('test-voice-btn');
             const saveSettingsBtn = document.getElementById('save-settings-btn');
             
-            // --- Web APIs ---
+            // --- 웹 API ---
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const recognition = SpeechRecognition ? new SpeechRecognition() : null;
             const synth = window.speechSynthesis;
             let voices = [];
             
-            // --- Application State ---
+            // --- 앱 상태 ---
             let users = [];
             let currentUser = null;
             let isRecording = false;
             let isTtsEnabled = true;
             let voiceSettings = { name: null, rate: 1, pitch: 1 };
             
-            // --- Core Functions ---
+            // --- 핵심 함수 ---
             function showScreen(screenName) {
-                // Use 'hidden' class to control screen visibility
                 for (const key in screens) {
                     screens[key].classList.add('hidden');
                 }
@@ -186,7 +185,7 @@
                 return age;
             }
 
-            // --- User Management ---
+            // --- 사용자 관리 ---
             function loadUsers() { users = JSON.parse(localStorage.getItem('ai-friend-users')) || []; }
             function saveUsers() { localStorage.setItem('ai-friend-users', JSON.stringify(users)); }
 
@@ -196,13 +195,13 @@
                     const age = calculateAge(user.birthYear, user.birthMonth);
                     const userCard = document.createElement('div');
                     userCard.className = 'bg-white p-4 rounded-lg shadow border flex justify-between items-center';
-                    userCard.innerHTML = `<div><p class="text-lg font-bold">${user.lastName}${user.firstName}</p><p class="text-sm text-gray-500">만 ${age}세 (${user.birthYear}년 ${user.birthMonth}월생)</p></div><button data-id="${user.id}" class="select-user-btn bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">선택</button>`;
+                    userCard.innerHTML = `<div><p class="text-lg font-bold">${user.nickname}</p><p class="text-sm text-gray-500">AI 친구: ${user.aiName}</p></div><button data-id="${user.id}" class="select-user-btn bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">선택</button>`;
                     userListEl.appendChild(userCard);
                 });
             }
             
             function createAddUserForm() {
-                addUserForm.innerHTML = `<div><label for="last-name" class="block text-md font-medium">성</label><input type="text" id="last-name" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"></div><div><label for="first-name" class="block text-md font-medium">이름</label><input type="text" id="first-name" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"></div><div><label for="birth-year" class="block text-md font-medium">출생년도</label><select id="birth-year" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 bg-white"></select></div><div><label for="birth-month" class="block text-md font-medium">출생월</label><select id="birth-month" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 bg-white"></select></div><p class="text-sm text-gray-500 pt-2">※ 만 3세부터 13세까지 등록 가능합니다.</p><button type="submit" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-600">저장하기</button>`;
+                addUserForm.innerHTML = `<div><label for="nickname" class="block text-md font-medium">우리아이 닉네임</label><input type="text" id="nickname" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"></div><div><label for="ai-name" class="block text-md font-medium">AI 친구 이름</label><input type="text" id="ai-name" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"></div><div><label for="birth-year" class="block text-md font-medium">출생년도</label><select id="birth-year" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 bg-white"></select></div><div><label for="birth-month" class="block text-md font-medium">출생월</label><select id="birth-month" required class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 bg-white"></select></div><p class="text-sm text-gray-500 pt-2">※ 만 3세부터 13세까지 등록 가능합니다.</p><button type="submit" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-600">저장하기</button>`;
                 const birthYearSelect = addUserForm.querySelector('#birth-year');
                 const birthMonthSelect = addUserForm.querySelector('#birth-month');
                 const currentYear = new Date().getFullYear();
@@ -216,7 +215,7 @@
                 }
             }
 
-            // --- Chat Management ---
+            // --- 대화 관리 ---
             function createIntroMessage() {
                  conversationLog.innerHTML = `<div id="intro-message" class="text-center text-gray-500 mt-8 p-4"><p class="text-lg">안녕하세요!</p><p>메시지를 입력하거나 마이크를 눌러주세요!</p></div>`;
             }
@@ -241,18 +240,29 @@
                 }
                 synth.speak(utterance);
             }
-
+            
+            // === 수정된 부분: 상세한 오류 처리 로직 추가 ===
             async function sendDataToServer(text) {
                 statusEl.textContent = 'AI가 생각하는 중... 🤔';
                 const currentVoiceSettings = {...voiceSettings};
                 addMessageToLog(text, 'user', null);
                 try {
                     const age = calculateAge(currentUser.birthYear, currentUser.birthMonth);
-                    const payload = { child_id: currentUser.id, child_name: currentUser.firstName, child_old: age, Message: text };
-                    const response = await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    const result = await response.json();
+                    const payload = { child_id: currentUser.id, child_name: currentUser.nickname, child_old: age, ai_name: currentUser.aiName, Message: text };
+                    const response = await fetch(API_URL, { 
+                        method: 'POST',
+                        mode: 'cors', // CORS 모드 명시
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify(payload) 
+                    });
                     
+                    if (!response.ok) {
+                        // 서버에서 텍스트로 된 에러 메시지를 보냈을 경우를 대비
+                        const errorText = await response.text();
+                        throw new Error(`서버 응답 오류 (HTTP ${response.status}): ${errorText}`);
+                    }
+                    
+                    const result = await response.json();
                     const responseText = result?.Message;
 
                     if (responseText) {
@@ -264,9 +274,16 @@
                         speak("서버 응답을 확인해주세요.", true);
                     }
                 } catch (error) {
-                    const errorMessage = '서버와 통신하는 데 문제가 생겼어요.';
+                    console.error('서버 통신 오류:', error);
+                    let errorMessage;
+                    if (error instanceof TypeError) {
+                        // CORS 오류는 보통 TypeError로 잡힙니다.
+                        errorMessage = '서버 연결 실패. 네트워크나 API 서버의 CORS 설정을 확인해주세요.';
+                    } else {
+                        errorMessage = `오류가 발생했습니다: ${error.message}`;
+                    }
                     addMessageToLog(errorMessage, 'ai', null);
-                    speak(errorMessage, true);
+                    speak("서버 통신 중 오류가 발생했습니다.", true);
                 }
             }
             
@@ -298,7 +315,7 @@
                 conversationLog.scrollTop = conversationLog.scrollHeight;
             }
 
-            // --- Settings Management ---
+            // --- 설정 관리 ---
             function loadVoiceSettings() {
                 const saved = localStorage.getItem('ai-friend-voice-settings');
                 if (saved) voiceSettings = JSON.parse(saved);
@@ -350,7 +367,7 @@
                 updateVoiceSettingsUI();
             }
 
-            // --- Event Listeners ---
+            // --- 이벤트 리스너 ---
             openVoiceSettingsBtn.addEventListener('click', () => {
                 updateVoiceSettingsUI();
                 voiceSettingsModal.classList.remove('hidden');
@@ -398,14 +415,14 @@
             
             addUserForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const lastName = addUserForm.querySelector('#last-name').value.trim();
-                const firstName = addUserForm.querySelector('#first-name').value.trim();
+                const nickname = addUserForm.querySelector('#nickname').value.trim();
+                const aiName = addUserForm.querySelector('#ai-name').value.trim();
                 const year = parseInt(addUserForm.querySelector('#birth-year').value);
                 const month = parseInt(addUserForm.querySelector('#birth-month').value);
-                if (!lastName || !firstName || !year || !month) return alert('모든 정보를 입력해주세요.');
+                if (!nickname || !aiName || !year || !month) return alert('모든 정보를 입력해주세요.');
                 const age = calculateAge(year, month);
                 if (age < MIN_AGE || age > MAX_AGE) return alert(`만 ${MIN_AGE}세부터 ${MAX_AGE}세까지 등록 가능합니다.`);
-                users.push({id: Date.now(), lastName, firstName, birthYear: year, birthMonth: month});
+                users.push({id: Date.now(), nickname, aiName, birthYear: year, birthMonth: month});
                 saveUsers();
                 renderUsers();
                 showScreen('userSelection');
@@ -415,12 +432,13 @@
                 if (e.target.classList.contains('select-user-btn')) {
                     currentUser = users.find(u => u.id === parseInt(e.target.dataset.id));
                     if (currentUser) {
-                        chatHeader.textContent = `${currentUser.lastName}${currentUser.firstName}님과 대화하기`;
+                        chatHeader.textContent = `${currentUser.nickname}님과 대화하기`;
                         createIntroMessage();
                         showScreen('chat');
                     }
                 }
             });
+
             sendBtn.addEventListener('click', () => {
                 const messageText = textInput.value.trim();
                 if (messageText) sendDataToServer(messageText);
@@ -456,7 +474,7 @@
                 };
             }
             
-            // --- App Initialization ---
+            // --- 앱 초기화 ---
             async function initializeApp() {
                 loadVoiceSettings();
                 updateTtsButtonIcon();
@@ -478,7 +496,7 @@
                             else showScreen('permission');
                         }
                     } catch(e) {
-                         showScreen('userSelection');
+                         showScreen('userSelection'); 
                     }
                 } else {
                      showScreen('permission');
